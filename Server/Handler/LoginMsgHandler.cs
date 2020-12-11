@@ -8,15 +8,22 @@ public partial class MsgHandler
     public static void MsgLogin(ClientState c, MsgBase msg)
     {
         LoginMsg m = msg as LoginMsg;
-        m.id += (" " + c.socket.RemoteEndPoint);
+        if (c.player != null || PlayerManager.IsOnline(m.id))
+        {
+            m.result = 1;
+            NetManager.Send(c, m);
+            return; 
+        }
         Player p = new Player(c)
         {
             id = m.id
         };
 
         c.player = p;
+        m.result = 0;
 
         PlayerManager.AddPlayer(c.player.id, c.player);
+        p.Send(m);
 
     }
 }
