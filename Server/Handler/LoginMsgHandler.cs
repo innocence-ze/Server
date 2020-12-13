@@ -16,7 +16,8 @@ public partial class MsgHandler
         }
         Player p = new Player(c)
         {
-            id = m.id
+            id = m.id,
+            data = new PlayerData(),
         };
 
         c.player = p;

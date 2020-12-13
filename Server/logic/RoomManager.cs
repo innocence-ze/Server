@@ -54,4 +54,12 @@ class RoomManager
 		}
 		return msg;
 	}
+
+	public static void Update()
+    {
+		foreach(Room room in roomDic.Values)
+        {
+			room.Update();
+        }
+    }
 }

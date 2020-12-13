@@ -7,14 +7,19 @@
         this.state = state;
     }
 
-    public int x;
-    public int y;
-    public int z;
+    public float x;
+    public float y;
+    public float z;
+    public float ex;
+    public float ey;
+    public float ez;
 
     public int roomId = -1;
     public int camp = -1;
 
     public int hp = 100;
+
+    public PlayerData data;
 
     public void Send(MsgBase msg)
     {
