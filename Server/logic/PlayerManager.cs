@@ -11,7 +11,10 @@ public class PlayerManager
 
     public static Player GetPlayer(string id)
     {
-        return playerDic[id];
+        if (playerDic.ContainsKey(id))
+            return playerDic[id];
+        RemovePlayer(id);
+        return null;
     }
 
     public static void AddPlayer(string id, Player player)

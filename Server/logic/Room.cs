@@ -76,6 +76,8 @@ public class Room
 		foreach (string id in playerDic.Keys)
 		{
 			Player player = PlayerManager.GetPlayer(id);
+			if (player == null)
+				continue;
 			if (player.camp == 1) { count1++; }
 			if (player.camp == 2) { count2++; }
 		}
@@ -150,7 +152,10 @@ public class Room
 		foreach (string id in playerDic.Keys)
 		{
 			Player player = PlayerManager.GetPlayer(id);
-			player.Send(msg);
+            if (player != null)
+			{
+				player.Send(msg);
+			}
 		}
 	}
 
@@ -165,6 +170,10 @@ public class Room
 		foreach (string id in playerDic.Keys)
 		{
 			Player player = PlayerManager.GetPlayer(id);
+			if(player == null)
+            {
+				continue;
+            }
             PlayerInfo playerInfo = new PlayerInfo
             {
                 id = player.id,
@@ -195,6 +204,8 @@ public class Room
 		foreach(var id in playerDic.Keys)
         {
 			Player player = PlayerManager.GetPlayer(id);
+			if (player == null) continue;
+
 			if (player.camp == 1) count1++;
 			else if (player.camp == 2) count2++;
         }
@@ -240,6 +251,8 @@ public class Room
 		foreach (string id in playerDic.Keys)
 		{
 			Player player = PlayerManager.GetPlayer(id);
+			if (player == null) continue;
+
 			if (player.camp == 1)
 			{
 				SetBirthPos(player, count1);
@@ -255,6 +268,11 @@ public class Room
 		foreach (string id in playerDic.Keys)
 		{
 			Player player = PlayerManager.GetPlayer(id);
+			if(player == null)
+            {
+				continue;
+            }
+
 			player.hp = 100;
 		}
 	}
@@ -279,7 +297,10 @@ public class Room
 		foreach (string id in playerDic.Keys)
 		{
 			Player player = PlayerManager.GetPlayer(id);
-			msg.tanks[i] = PlayerToTankInfo(player);
+			if(player != null)
+			{
+				msg.tanks[i] = PlayerToTankInfo(player);
+			}
 			i++;
 		}
 		Broadcast(msg);
@@ -299,7 +320,7 @@ public class Room
 		{
 			return;
 		}
-		if (NetManager.GetTimeStamp() - lastJudgeTime < 10f)
+		if (NetManager.GetTimeStamp() - lastJudgeTime < 1f)
 		{
 			return;
 		}
@@ -331,6 +352,8 @@ public class Room
 			Player player = PlayerManager.GetPlayer(id);
 			if (!IsDie(player))
 			{
+				if (player == null) continue;
+
 				if (player.camp == 1) { count1++; };
 				if (player.camp == 2) { count2++; };
 			}

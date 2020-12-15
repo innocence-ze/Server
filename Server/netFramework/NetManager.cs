@@ -150,7 +150,7 @@ public static class NetManager
         // have read all data, need to distribute message
         MethodInfo mi = typeof(MsgHandler).GetMethod(msgName);
         object[] o = { state, msg };
-        Console.WriteLine("Receive " + msgName);
+        Console.WriteLine("Receive " + msgName + " from: " + state.socket.RemoteEndPoint.ToString());
         if(mi != null)
         {
             mi.Invoke(null, o);
