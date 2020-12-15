@@ -87,7 +87,48 @@
 		}
 
 		room.RemovePlayer(player.id);
+		player.roomId = -1;
 		msg.result = 0;
 		player.Send(msg);
 	}
+
+	public static void MsgStartBattle(ClientState c, MsgBase msgBase)
+    {
+		MsgStartBattle msg = msgBase as MsgStartBattle;
+		Player player = c.player;
+		if(player == null)
+        {
+			return;
+        }
+
+        Room room = RoomManager.GetRoom(player.roomId);
+		if(room == null)
+        {
+			msg.result = 1;
+			player.Send(msg);
+			return;
+        }
+
+        if (!room.IsOwner(player))
+        {
+			msg.result = 1;
+			player.Send(msg);
+			return;
+        }
+
+        if (!room.StartBattle())
+        {
+			msg.result = 1;
+			player.Send(msg);
+			return;
+        }
+        else
+        {
+			msg.result = 0;
+			player.Send(msg);
+        }
+
+
+    }
+
 }

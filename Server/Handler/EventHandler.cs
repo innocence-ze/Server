@@ -14,7 +14,7 @@ public partial class EventHandler
 
 	public static void OnTimer()
 	{
-		CheckPing();
+		//CheckPing();
 		RoomManager.Update();
 	}
 

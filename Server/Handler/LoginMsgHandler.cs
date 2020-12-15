@@ -7,7 +7,7 @@ public partial class MsgHandler
     // add more player property
     public static void MsgLogin(ClientState c, MsgBase msg)
     {
-        LoginMsg m = msg as LoginMsg;
+        MsgLogin m = msg as MsgLogin;
         if (c.player != null || PlayerManager.IsOnline(m.id))
         {
             m.result = 1;

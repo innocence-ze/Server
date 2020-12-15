@@ -47,6 +47,7 @@
     <Compile Include="Handler\EventHandler.cs" />
     <Compile Include="Handler\LoginMsgHandler.cs" />
     <Compile Include="Handler\RoomMsgHandler.cs" />
+    <Compile Include="Handler\SyncMsgHandler.cs" />
     <Compile Include="logic\Player.cs" />
     <Compile Include="logic\PlayerData.cs" />
     <Compile Include="logic\PlayerManager.cs" />
@@ -54,8 +55,9 @@
     <Compile Include="logic\Room.cs" />
     <Compile Include="logic\RoomManager.cs" />
     <Compile Include="Message\BattleMsg.cs" />
-    <Compile Include="Message\LoginMsg.cs" />
+    <Compile Include="Message\MsgLogin.cs" />
     <Compile Include="Message\RoomMsg.cs" />
+    <Compile Include="Message\SyncMsg.cs" />
     <Compile Include="Message\SysMsg.cs" />
     <Compile Include="netFramework\ByteArray.cs" />
     <Compile Include="netFramework\ClientState.cs" />

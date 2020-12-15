@@ -185,7 +185,7 @@ public static class NetManager
 
         try
         {
-            Console.WriteLine("Send message to " + state.socket.RemoteEndPoint);
+            Console.WriteLine("Send { " + msg.msgName + " } to " + state.socket.RemoteEndPoint);
             state.socket.BeginSend(sendBytes, 0, sendBytes.Length, 0, null, null);
         }
         catch(SocketException ex)
