@@ -6,19 +6,53 @@ using System.Reflection;
 
 public static class NetManager
 {
+    static string udpString = "Tank";
+
+    struct UdpState
+    {
+        public UdpClient udp;
+        public IPEndPoint endIp;
+    }
+
+
     public static Socket listenfd;
     public static Dictionary<Socket, ClientState> clientDic = new Dictionary<Socket, ClientState>();
     static List<Socket> checkRead = new List<Socket>();
 
     public static long pingInterval = 30;
+    static UdpState udpState;
+
+   
 
     public static void StartLoop(int listenPort)
     {
+        UdpClient u = new UdpClient(7777);
+        IPEndPoint e = new IPEndPoint(IPAddress.Broadcast, 6666);
+        udpState = new UdpState
+        {
+            udp = u,
+            endIp = e
+        };
+
+        u.BeginReceive(UdpReceiveCallback, udpState);
+
+
+
+
         listenfd = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         //bind
-        IPAddress ipAdr = IPAddress.Parse("0.0.0.0");
-        IPEndPoint ipEp = new IPEndPoint(ipAdr, listenPort);
-        listenfd.Bind(ipEp);
+        IPHostEntry ipEntry = Dns.GetHostEntry(Dns.GetHostName());
+        foreach (var item in ipEntry.AddressList)
+        {
+            if (item.AddressFamily == AddressFamily.InterNetwork)
+            {
+                IPAddress ipAdr = item;
+                IPEndPoint ipEp = new IPEndPoint(ipAdr, listenPort);
+                listenfd.Bind(ipEp);
+                Console.WriteLine($"[server] Bind to {ipEp.Address}");
+                break;
+            }
+        }
 
         //listen
         listenfd.Listen(0);
@@ -44,6 +78,28 @@ public static class NetManager
         }
 
 
+    }
+
+    static void UdpReceiveCallback(IAsyncResult ar)
+    {
+        UdpClient u = ((UdpState)(ar.AsyncState)).udp;
+        IPEndPoint e = ((UdpState)(ar.AsyncState)).endIp;
+        byte[] receiveBytes = u.EndReceive(ar, ref e);
+        string receiveString = System.Text.Encoding.ASCII.GetString(receiveBytes);
+        if(receiveString == udpString)
+        {
+            var udpBytes = System.Text.Encoding.UTF8.GetBytes(udpString);
+            u.Connect(e);
+            u.BeginSend(udpBytes, udpBytes.Length, UdpSendCallback, u);
+        }
+        udpState.udp.BeginReceive(UdpReceiveCallback, udpState);
+    }
+
+    static void UdpSendCallback(IAsyncResult ar)
+    {
+        UdpClient u = (UdpClient)ar.AsyncState;
+
+        Console.WriteLine($"number of bytes sent: {u.EndSend(ar)}");
     }
 
     private static void ResetCheckRead()
@@ -217,4 +273,7 @@ public static class NetManager
         TimeSpan ts = DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0);
         return Convert.ToInt64(ts.TotalSeconds);
     }
+
+
+
 }
