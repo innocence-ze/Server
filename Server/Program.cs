@@ -12,5 +12,9 @@ namespace Server
         {
             NetManager.StartLoop(8888);
         }
+        ~Program()
+        {
+            NetManager.udpReceiveThread?.Abort();
+        }
     }
 }

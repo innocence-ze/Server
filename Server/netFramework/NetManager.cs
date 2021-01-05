@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Threading;
 
 public static class NetManager
 {
@@ -20,10 +21,11 @@ public static class NetManager
     static List<Socket> checkRead = new List<Socket>();
 
     public static long pingInterval = 30;
+
+
     static UdpState udpState;
 
-   
-
+    public static Thread udpReceiveThread;
     public static void StartLoop(int listenPort)
     {
         UdpClient u = new UdpClient(7777);
@@ -34,9 +36,8 @@ public static class NetManager
             endIp = e
         };
 
-        u.BeginReceive(UdpReceiveCallback, udpState);
-
-
+        udpReceiveThread = new Thread(UdpReceiveThread);
+        udpReceiveThread.Start();
 
 
         listenfd = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -62,10 +63,10 @@ public static class NetManager
         {
             ResetCheckRead();
             Socket.Select(checkRead, null, null, 1000);
-            for(int i = checkRead.Count - 1; i >= 0; i--)
+            for (int i = checkRead.Count - 1; i >= 0; i--)
             {
                 Socket s = checkRead[i];
-                if(s == listenfd)
+                if (s == listenfd)
                 {
                     ReadListenfd(s);
                 }
@@ -77,36 +78,40 @@ public static class NetManager
             Timer();
         }
 
-
     }
 
     static void UdpReceiveCallback(IAsyncResult ar)
     {
         UdpClient u = ((UdpState)(ar.AsyncState)).udp;
         IPEndPoint e = ((UdpState)(ar.AsyncState)).endIp;
-        byte[] receiveBytes = u.EndReceive(ar, ref e);
-        string receiveString = System.Text.Encoding.ASCII.GetString(receiveBytes);
-        if(receiveString == udpString)
-        {
-            var udpBytes = System.Text.Encoding.UTF8.GetBytes(udpString);
-            u.Connect(e);
-            u.BeginSend(udpBytes, udpBytes.Length, UdpSendCallback, u);
-        }
+        IPEndPoint tempE = new IPEndPoint(IPAddress.Any, 6666);
+
         udpState.udp.BeginReceive(UdpReceiveCallback, udpState);
     }
 
-    static void UdpSendCallback(IAsyncResult ar)
+    static void UdpReceiveThread()
     {
-        UdpClient u = (UdpClient)ar.AsyncState;
-
-        Console.WriteLine($"number of bytes sent: {u.EndSend(ar)}");
+        while (true)
+        {
+            IPEndPoint tempE = new IPEndPoint(IPAddress.Any, 6666);
+            byte[] receiveBytes = udpState.udp.Receive(ref tempE);
+            // block ===============
+            string receiveString = System.Text.Encoding.ASCII.GetString(receiveBytes);
+            if (receiveString == udpString)
+            {
+                var udpBytes = System.Text.Encoding.UTF8.GetBytes(udpString);
+                udpState.udp.Send(udpBytes, udpBytes.Length, tempE);
+                Console.WriteLine($"number of bytes sent:{udpBytes.Length}");
+            }
+        }
     }
+
 
     private static void ResetCheckRead()
     {
         checkRead.Clear();
         checkRead.Add(listenfd);
-        foreach(var s in clientDic.Values)
+        foreach (var s in clientDic.Values)
         {
             checkRead.Add(s.socket);
         }
@@ -125,7 +130,7 @@ public static class NetManager
             };
             clientDic.Add(clientfd, state);
         }
-        catch(SocketException ex)
+        catch (SocketException ex)
         {
             Console.WriteLine("Accept fail " + ex.ToString());
         }
@@ -139,12 +144,12 @@ public static class NetManager
         //receive
         int count = 0;
 
-        if(readBuffer.Remain <= 0)
+        if (readBuffer.Remain <= 0)
         {
             OnReceivingData(state);
             readBuffer.Move();
         }
-        if(readBuffer.Remain <= 0)
+        if (readBuffer.Remain <= 0)
         {
             Console.WriteLine("Receive fail, maybe message's length is larger than buffer's capacity");
             Close(state);
@@ -155,14 +160,14 @@ public static class NetManager
         {
             count = clientfd.Receive(readBuffer.bytes, readBuffer.writeIndex, readBuffer.Remain, 0);
         }
-        catch(SocketException ex)
+        catch (SocketException ex)
         {
             Console.WriteLine("Receive socketException: " + ex.ToString());
             Close(state);
             return;
         }
-        
-        if(count <= 0)
+
+        if (count <= 0)
         {
             Console.WriteLine("Socket close " + clientfd.RemoteEndPoint.ToString());
             Close(state);
@@ -178,19 +183,19 @@ public static class NetManager
     {
         ByteArray readBuffer = state.readBuffer;
 
-        if(readBuffer.Length <= 2)
+        if (readBuffer.Length <= 2)
         {
             return;
         }
         Int16 bodyLength = (Int16)((readBuffer.bytes[readBuffer.readIndex + 1] << 8) | readBuffer.bytes[readBuffer.readIndex]);
-        if(readBuffer.Length < bodyLength + 2)
+        if (readBuffer.Length < bodyLength + 2)
         {
             return;
         }
         readBuffer.readIndex += 2;
 
         string msgName = MsgBase.DecodeName(readBuffer.bytes, readBuffer.readIndex, out int nameCount);
-        if(msgName == "")
+        if (msgName == "")
         {
             Console.WriteLine("On receiving data, Decode name fail");
             Close(state);
@@ -207,7 +212,7 @@ public static class NetManager
         MethodInfo mi = typeof(MsgHandler).GetMethod(msgName);
         object[] o = { state, msg };
         Console.WriteLine("Receive " + msgName + " from: " + state.socket.RemoteEndPoint.ToString());
-        if(mi != null)
+        if (mi != null)
         {
             mi.Invoke(null, o);
         }
@@ -215,7 +220,7 @@ public static class NetManager
         {
             Console.WriteLine("OnReceivingData Invoke fail " + msgName);
         }
-        if(readBuffer.Length > 2)
+        if (readBuffer.Length > 2)
         {
             OnReceivingData(state);
         }
@@ -223,7 +228,7 @@ public static class NetManager
 
     public static void Send(ClientState state, MsgBase msg)
     {
-        if(state == null || !state.socket.Connected)
+        if (state == null || !state.socket.Connected)
         {
             return;
         }
@@ -244,7 +249,7 @@ public static class NetManager
             Console.WriteLine("Send { " + msg.msgName + " } to " + state.socket.RemoteEndPoint);
             state.socket.BeginSend(sendBytes, 0, sendBytes.Length, 0, null, null);
         }
-        catch(SocketException ex)
+        catch (SocketException ex)
         {
             Console.WriteLine("Socket send message error " + ex.ToString());
         }
